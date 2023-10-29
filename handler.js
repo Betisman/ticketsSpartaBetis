@@ -1,18 +1,57 @@
 'use strict';
+const TelegramBot = require('node-telegram-bot-api');
+const axios = require('axios');
+require('dotenv').config();
+console.log(process.env)
+const botToken = process.env.TELEGRAM_BOT_TOKEN;
+console.log('botToken', botToken)
+const chatId = process.env.TELEGRAM_CHAT_ID;
+console.log('chatId', chatId)
 
-module.exports.hello = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: 'Go Serverless v1.0! Your function executed successfully!',
-        input: event,
-      },
-      null,
-      2
-    ),
-  };
+module.exports.check = async (event) => {
+  const url = 'https://sparta.cz/en/tickets/tickets';
 
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
+  const searchWord = 'betis';
+
+  if (!botToken) {
+    throw new Error('Missing Telegram bot token')
+  }
+
+  if (!chatId) {
+    throw new Error('Missing Telegram chat ID')
+  }
+
+  try {
+    const response = await axios.get(url);
+    const bot = new TelegramBot(botToken);
+
+    // Check if the word 'Antonio' is in the source code
+    if (response.data.toLowerCase().includes(searchWord.toLowerCase())) {
+      console.log(`The word "${searchWord.toLowerCase()}" was found in the page source code.`);
+
+      // Send a message through Telegram
+      bot.sendMessage(chatId, `The word "${searchWord.toLowerCase()}" was found on the website ${url}.`);
+
+      return {
+        statusCode: 200,
+        body: `Word ${searchWord.toLocaleLowerCase()} found, Telegram message sent`,
+      };
+    } else {
+      console.log(`The word "${searchWord.toLowerCase()}" was not found in the page source code.`);
+      bot.sendMessage(chatId, `The word "${searchWord.toLowerCase()}" was not found in the page source code.`);
+
+      return {
+        statusCode: 200,
+        body: `Word ${searchWord.toLocaleLowerCase()} not found`,
+      };
+    }
+  } catch (error) {
+    console.error('Error making the request:', error);
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify('An error occurred while processing the request')
+    };
+  }
 };
+
