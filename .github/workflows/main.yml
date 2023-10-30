@@ -20,8 +20,9 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: npm ci
     - name: serverless deploy
-      uses: serverless/github-action@master
+      uses: serverless/github-action@main
       with:
         args: deploy
       env:
