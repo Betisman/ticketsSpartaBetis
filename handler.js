@@ -2,11 +2,9 @@
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 require('dotenv').config();
-console.log(process.env)
+
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
-console.log('botToken', botToken)
 const chatId = process.env.TELEGRAM_CHAT_ID;
-console.log('chatId', chatId)
 
 module.exports.check = async (event) => {
   const url = 'https://sparta.cz/en/tickets/tickets';
