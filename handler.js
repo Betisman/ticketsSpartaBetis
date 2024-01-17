@@ -34,6 +34,10 @@ const searchBetisWeb = async () => {
 
   logger.info('Browser launched');
 
+  logger.info(`idAbonado: ${idAbonado}`);
+  logger.info(`pinAbonado: ${pinAbonado}`);
+  logger.info(`dni: ${dni}`);
+
   const page = await browser.newPage();
 
   await page.goto("https://abonados.realbetisbalompie.es/index.php/es-es/");
