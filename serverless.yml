@@ -29,6 +29,9 @@ provider:
   environment:
     TELEGRAM_BOT_TOKEN: ${env:TELEGRAM_BOT_TOKEN}
     TELEGRAM_CHAT_ID: ${env:TELEGRAM_CHAT_ID}
+    ID_ABONADO: ${{ env:ID_ABONADO }}
+    PIN_ABONADO: ${{ env:PIN_ABONADO }}
+    DNI: ${{ env:DNI }}
 
 
 # you can overwrite defaults here
