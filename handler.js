@@ -22,9 +22,10 @@ const dni = process.env.DNI;
 
 const searchBetisWeb = async () => {
   logger.info('Starting the searchBetisWeb function');
+  let content;
   const browser = await puppeteer.launch({
     headless: chromium.headless,
-    slowMo: 100,
+    slowMo: 50,
     executablePath: await chromium.executablePath(),
     ignoreHTTPSErrors: true,
     defaultViewport: chromium.defaultViewport,
@@ -53,6 +54,9 @@ const searchBetisWeb = async () => {
 
   logger.info('3 seconds (max) passed, let\'s fill the input #dni with a value');
 
+  content = await page.content();
+  logger.info(`content: ${content}`);
+
   // fill the input #dni with a value
   await page.type('#dni', dni);
 
@@ -61,8 +65,12 @@ const searchBetisWeb = async () => {
 
   logger.info('Validar button clicked, let\'s wait for 3 seconds (max) or until the page loads');
 
+  
   // wait for 3 seconds or until the page loads
   await new Promise(r => setTimeout(r, 3000));
+  
+  content = await page.content();
+  logger.info(`content: ${content}`);
 
   // click on the link a[href="/index.php/es-es/soliciutd-banderas"]
   await page.click('a[href="/index.php/es-es/solicitud-banderas"]');
@@ -71,6 +79,9 @@ const searchBetisWeb = async () => {
 
   // wait for 3 seconds or until the page loads
   await new Promise(r => setTimeout(r, 3000));
+
+  content = await page.content();
+  logger.info(`content: ${content}`);
 
   // find the text "No se ha encontrado ningun evento activo"
   const text = await page.evaluate(() => document.querySelector('body').innerText);
