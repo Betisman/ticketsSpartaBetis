@@ -1,6 +1,7 @@
 'use strict';
 const TelegramBot = require('node-telegram-bot-api');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 require('dotenv').config();
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -11,7 +12,14 @@ const pinAbonado = process.env.PIN_ABONADO;
 const dni = process.env.DNI;
 
 const searchBetisWeb = async () => {
-  const browser = await puppeteer.launch({ headless: 'new', slowMo: 100 });
+  const browser = await puppeteer.launch({
+    headless: chromium.headless,
+    slowMo: 100,
+    executablePath: await chromium.executablePath(),
+    ignoreHTTPSErrors: true,
+    defaultViewport: chromium.defaultViewport,
+    args:[...chromium.args, '--hide-scrollbars', '--disable-web-security']
+  });
   const page = await browser.newPage();
 
   await page.goto("https://abonados.realbetisbalompie.es/index.php/es-es/");
