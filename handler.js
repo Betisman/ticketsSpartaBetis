@@ -1,16 +1,55 @@
 'use strict';
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 const chatId = process.env.TELEGRAM_CHAT_ID;
 
+const idAbonado = process.env.ID_ABONADO;
+const pinAbonado = process.env.PIN_ABONADO;
+const dni = process.env.DNI;
+
+const searchBetisWeb = async () => {
+  const browser = await puppeteer.launch({ headless: false, slowMo: 200 });
+  const page = await browser.newPage();
+
+  await page.goto("https://abonados.realbetisbalompie.es/index.php/es-es/");
+
+  // type username in #id-abonado
+  await page.type('#id-abonado', idAbonado);
+  // type password in #pin-password
+  await page.type('#pin-abonado', pinAbonado);
+
+  await page.click('#login-abonado-rbb input[type="submit"]');
+
+  // wait for 3 seconds or until the page loads
+  await new Promise(r => setTimeout(r, 3000));
+
+  // fill the input #dni with a value
+  await page.type('#dni', dni);
+
+  // click on the button #validar
+  await page.click('#validar');
+
+  // wait for 3 seconds or until the page loads
+  await new Promise(r => setTimeout(r, 3000));
+
+  // click on the link a[href="/index.php/es-es/soliciutd-banderas"]
+  await page.click('a[href="/index.php/es-es/solicitud-banderas"]');
+
+  // find the text "No se ha encontrado ningun evento activo"
+  const text = await page.evaluate(() => document.querySelector('body').innerText);
+
+  const isEventActive = !text.includes('No se ha encontrado ningun evento activo');
+  const isZagrebFound = text.includes('Zagreb');
+
+  await browser.close();
+
+  return { isEventActive, isZagrebFound };
+}
+
 module.exports.check = async (event) => {
-  const url = 'https://sparta.cz/en/tickets/tickets';
-
-  const searchWord = 'betis';
-
   if (!botToken) {
     throw new Error('Missing Telegram bot token')
   }
@@ -19,28 +58,31 @@ module.exports.check = async (event) => {
     throw new Error('Missing Telegram chat ID')
   }
 
+  const bot = new TelegramBot(botToken);
+  
   try {
-    const response = await axios.get(url);
-    const bot = new TelegramBot(botToken);
+    const { isEventActive, isZagrebFound } = await searchBetisWeb();
 
-    // Check if the word 'Antonio' is in the source code
-    if (response.data.toLowerCase().includes(searchWord.toLowerCase())) {
-      console.log(`The word "${searchWord.toLowerCase()}" was found in the page source code.`);
+    let message = '';
+    if (isEventActive || isZagrebFound) {
+      message = `Check the website, there is an event active or Zagreb was found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
+      console.log(message);
 
       // Send a message through Telegram
-      bot.sendMessage(chatId, `The word "${searchWord.toLowerCase()}" was found on the website ${url}.`);
+      bot.sendMessage(chatId, message);
 
       return {
         statusCode: 200,
-        body: `Word ${searchWord.toLocaleLowerCase()} found, Telegram message sent`,
+        body: `${message} => Telegram message sent`,
       };
     } else {
-      console.log(`The word "${searchWord.toLowerCase()}" was not found in the page source code.`);
-      bot.sendMessage(chatId, `The word "${searchWord.toLowerCase()}" was not found in the page source code.`);
+      message = `:( There is no event active and Zagreb was not found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
+      console.log(message);
+      bot.sendMessage(chatId, message);
 
       return {
         statusCode: 200,
-        body: `Word ${searchWord.toLocaleLowerCase()} not found`,
+        body: message,
       };
     }
   } catch (error) {
@@ -48,7 +90,7 @@ module.exports.check = async (event) => {
 
     return {
       statusCode: 500,
-      body: JSON.stringify('An error occurred while processing the request')
+      body: `An error occurred while processing the request ${error.message}`
     };
   }
 };
