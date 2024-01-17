@@ -11,7 +11,7 @@ const pinAbonado = process.env.PIN_ABONADO;
 const dni = process.env.DNI;
 
 const searchBetisWeb = async () => {
-  const browser = await puppeteer.launch({ headless: false, slowMo: 200 });
+  const browser = await puppeteer.launch({ headless: 'new', slowMo: 100 });
   const page = await browser.newPage();
 
   await page.goto("https://abonados.realbetisbalompie.es/index.php/es-es/");
