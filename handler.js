@@ -105,7 +105,8 @@ const searchBetisWeb = async () => {
 
 module.exports.check = async (event) => {
   try {
-    logger.info('Starting the check function');
+    const date = new Date();
+    logger.info(`Starting the check function ${date.toISOString()}`);
 
     if (!botToken) {
       throw new Error('Missing Telegram bot token')
@@ -114,6 +115,9 @@ module.exports.check = async (event) => {
     if (!chatId) {
       throw new Error('Missing Telegram chat ID')
     }
+
+    logger.info(`botToken: ${botToken}`);
+    logger.info(`chatId: ${chatId}`);
 
     const bot = new TelegramBot(botToken);
 
@@ -124,22 +128,26 @@ module.exports.check = async (event) => {
 
 
     let message = '';
+    let sentMessage = '';
     if (isEventActive || isZagrebFound) {
-      message = `Check the website, there is an event active or Zagreb was found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
+      message = `${date.toISOString()}: Check the website, there is an event active or Zagreb was found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
       logger.info(message);
 
       // Send a message through Telegram
-      bot.sendMessage(chatId, message);
+      sentMessage = await bot.sendMessage(chatId, message);
 
+      logger.info(`sentMessage: ${JSON.stringify(sentMessage)}`);
+      
       return {
         statusCode: 200,
         body: `${message} => Telegram message sent`,
       };
     } else {
-      message = `:( There is no event active and Zagreb was not found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
+      message = `${date.toISOString()}: :( There is no event active and Zagreb was not found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
       logger.info(message);
-      bot.sendMessage(chatId, message);
-
+      sentMessage = await bot.sendMessage(chatId, message);
+      logger.info(`sentMessage: ${JSON.stringify(sentMessage)}`);
+      
       return {
         statusCode: 200,
         body: message,
