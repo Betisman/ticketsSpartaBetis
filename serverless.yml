@@ -18,7 +18,7 @@ service: zagreb
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: "3"
+frameworkVersion: "4"
 
 useDotenv: true
 
@@ -33,6 +33,9 @@ provider:
     ID_ABONADO: ${env:ID_ABONADO}
     PIN_ABONADO: ${env:PIN_ABONADO}
     DNI: ${env:DNI}
+    EMAIL_ABONADO: ${env:EMAIL_ABONADO}
+    PASSWORD_ABONADO: ${env:PASSWORD_ABONADO}
+    SERVERLESS_ACCESS_KEY: ${env:SERVERLESS_ACCESS_KEY}
 
 
 # you can overwrite defaults here
