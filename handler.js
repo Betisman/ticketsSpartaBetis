@@ -20,6 +20,9 @@ const idAbonado = process.env.ID_ABONADO;
 const pinAbonado = process.env.PIN_ABONADO;
 const dni = process.env.DNI;
 
+const emailAbonado = process.env.EMAIL_ABONADO;
+const passwordAbonado = process.env.PASSWORD_ABONADO;
+
 const searchBetisWeb = async () => {
   logger.info('Starting the searchBetisWeb function');
   let content;
@@ -40,16 +43,36 @@ const searchBetisWeb = async () => {
 
   const page = await browser.newPage();
 
-  await page.goto("https://abonados.realbetisbalompie.es/index.php/es-es/");
+  await page.goto('https://socios.realbetisbalompie.es/socios');
+  await page.waitForNavigation();
 
-  logger.info('Page loaded');
+  logger.info('Page socios loaded');
 
-  // type username in #id-abonado
-  await page.type('#id-abonado', idAbonado);
-  // type password in #pin-password
-  await page.type('#pin-abonado', pinAbonado);
+  // click the button with the link containing sso.realbetisbalompie.es
+  await page.click('a[href="https://sso.realbetisbalompie.es/"]');
 
-  await page.click('#login-abonado-rbb input[type="submit"]');
+  logger.info('Button sso.realbetisbalompie.es clicked');
+
+  await page.waitForNavigation();
+  logger.info('Page sso.realbetisbalompie.es loaded');
+
+  // click the button with content having (password or contraseña)
+  await page.click('button:has-text("contraseña")');
+  logger.info('Button password clicked');
+
+  // wait for 3 seconds or until the page loads
+  await new Promise(r => setTimeout(r, 3000));
+
+  await page.waitForNavigation();
+  logger.info('Page password loaded');
+
+  // type email in #formBasicText
+  await page.type('#formBasicText', emailAbonado);
+  // type password in #formBasicPassword
+  await page.type('#formBasicPassword', passwordAbonado);
+
+  // click the button of type submit with class btnLogin
+  await page.click('.btnLogin');
 
   logger.info('Login submitted, let\'s wait for 3 seconds (max) or until the page loads');
 
@@ -61,25 +84,19 @@ const searchBetisWeb = async () => {
   content = await page.content();
   logger.info(`content: ${content}`);
 
-  // fill the input #dni with a value
-  await page.type('#dni', dni);
+  // click the button of type submit with class btnLogin
+  await page.click('.btnLogin');
 
-  // click on the button #validar
-  await page.click('#validar');
-
-  logger.info('Validar button clicked, let\'s wait for 3 seconds (max) or until the page loads');
-
-  
-  // wait for 3 seconds or until the page loads
-  await new Promise(r => setTimeout(r, 3000));
-  
   content = await page.content();
   logger.info(`content: ${content}`);
 
-  // click on the link a[href="/index.php/es-es/soliciutd-banderas"]
-  await page.click('a[href="/index.php/es-es/solicitud-banderas"]');
+  // click the link with href containing inscripciones
+  await page.click('a[href="/socios/area-privada/inscripciones"]');
 
-  logger.info('Solicitud banderas link clicked, let\'s wait for 3 seconds (max) or until the page loads');
+  content = await page.content();
+  logger.info(`content: ${content}`);
+
+  logger.info('Solicitud inscripciones link clicked, let\'s wait for 3 seconds (max) or until the page loads');
 
   // wait for 3 seconds or until the page loads
   await new Promise(r => setTimeout(r, 3000));
@@ -91,16 +108,17 @@ const searchBetisWeb = async () => {
   const text = await page.evaluate(() => document.querySelector('body').innerText);
 
   const isEventActive = !text.includes('No se ha encontrado ningun evento activo');
-  const isZagrebFound = text.includes('Zagreb');
+  // find the text "Gent" or "Gente"
+  const isGentFound = text.includes('Gent') || text.includes('Gante');
 
   logger.info(`isEventActive: ${isEventActive}`);
-  logger.info(`isZagrebFound: ${isZagrebFound}`);
+  logger.info(`isGentFound: ${isGentFound}`);
 
   await browser.close();
 
   logger.info('Browser closed');
 
-  return { isEventActive, isZagrebFound };
+  return { isEventActive, isGentFound };
 }
 
 module.exports.check = async (event) => {
@@ -121,16 +139,16 @@ module.exports.check = async (event) => {
 
     const bot = new TelegramBot(botToken);
 
-    const { isEventActive, isZagrebFound } = await searchBetisWeb();
+    const { isEventActive, isGentFound } = await searchBetisWeb();
 
     logger.info(`check:isEventActive: ${isEventActive}`);
-    logger.info(`check:isZagrebFound: ${isZagrebFound}`);
+    logger.info(`check:isGentFound: ${isGentFound}`);
 
 
     let message = '';
     let sentMessage = '';
-    if (isEventActive || isZagrebFound) {
-      message = `${date.toISOString()}: Check the website, there is an event active or Zagreb was found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
+    if (isEventActive || isGentFound) {
+      message = `${date.toISOString()}: Check the website, there is an event active or Zagreb was found: ${JSON.stringify({ isEventActive, isGentFound })}`;
       logger.info(message);
 
       // Send a message through Telegram
@@ -143,7 +161,7 @@ module.exports.check = async (event) => {
         body: `${message} => Telegram message sent`,
       };
     } else {
-      message = `${date.toISOString()}: :( There is no event active and Zagreb was not found: ${JSON.stringify({ isEventActive, isZagrebFound })}`;
+      message = `${date.toISOString()}: :( There is no event active and Zagreb was not found: ${JSON.stringify({ isEventActive, isGentFound })}`;
       logger.info(message);
       sentMessage = await bot.sendMessage(chatId, message);
       logger.info(`sentMessage: ${JSON.stringify(sentMessage)}`);
