@@ -30,6 +30,9 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        EMAIL_ABONADO: ${{ secrets.EMAIL_ABONADO }}
+        PASSWORD_ABONADO: ${{ secrets.PASSWORD_ABONADO }}
+        SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
         ID_ABONADO: ${{ secrets.ID_ABONADO }}
         PIN_ABONADO: ${{ secrets.PIN_ABONADO }}
         DNI: ${{ secrets.DNI }}
