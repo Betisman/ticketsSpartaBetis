@@ -1,6 +1,6 @@
 'use strict';
 const TelegramBot = require('node-telegram-bot-api');
-const { chromium } = require('playwright');
+const playwright = require('playwright-aws-lambda');
 require('dotenv').config();
 
 // Environment variables and constants
@@ -34,13 +34,7 @@ module.exports.check = async (event) => {
     let browser = null;
 
     try {
-        browser = await chromium.launch({
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-gpu',
-                '--disable-dev-shm-usage'
-            ],
+        browser = await playwright.launchChromium({
             headless: true
         });
 

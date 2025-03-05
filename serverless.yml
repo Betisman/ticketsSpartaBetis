@@ -26,7 +26,8 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: eu-south-2
-  timeout: 60
+  timeout: 120
+  memorySize: 2048
   environment:
     TELEGRAM_BOT_TOKEN: ${env:TELEGRAM_BOT_TOKEN}
     TELEGRAM_CHAT_ID: ${env:TELEGRAM_CHAT_ID}
@@ -36,7 +37,8 @@ provider:
     EMAIL_ABONADO: ${env:EMAIL_ABONADO}
     PASSWORD_ABONADO: ${env:PASSWORD_ABONADO}
     SERVERLESS_ACCESS_KEY: ${env:SERVERLESS_ACCESS_KEY}
-
+    URL: ${env:URL}
+    ALERT_ONLY_FOUND: ${env:ALERT_ONLY_FOUND}
 
 # you can overwrite defaults here
 #  stage: dev
