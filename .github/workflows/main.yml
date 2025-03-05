@@ -1,7 +1,6 @@
-
 name: Deploy serverless app
 
-on: 
+on:
   push:
     branches:
       - main
@@ -15,24 +14,26 @@ jobs:
       matrix:
         node-version: [18.x]
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - name: serverless deploy
-      uses: serverless/github-action@master
-      with:
-        args: deploy
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        EMAIL_ABONADO: ${{ secrets.EMAIL_ABONADO }}
-        PASSWORD_ABONADO: ${{ secrets.PASSWORD_ABONADO }}
-        SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
-        ID_ABONADO: ${{ secrets.ID_ABONADO }}
-        PIN_ABONADO: ${{ secrets.PIN_ABONADO }}
-        DNI: ${{ secrets.DNI }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - name: serverless deploy
+        uses: serverless/github-action@master
+        with:
+          args: deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          URL: ${{ secrets.URL }}
+          ALERT_ONLY_FOUND: ${{ secrets.ALERT_ONLY_FOUND }}
+          EMAIL_ABONADO: ${{ secrets.EMAIL_ABONADO }}
+          PASSWORD_ABONADO: ${{ secrets.PASSWORD_ABONADO }}
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          ID_ABONADO: ${{ secrets.ID_ABONADO }}
+          PIN_ABONADO: ${{ secrets.PIN_ABONADO }}
+          DNI: ${{ secrets.DNI }}
