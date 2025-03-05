@@ -32,42 +32,61 @@ module.exports.check = async (event) => {
     }
 
     let browser = null;
+    let context = null;
+    let page = null;
 
     try {
+        console.log('Launching browser...');
         browser = await playwright.launchChromium({
-            headless: true
+            headless: true,
+            // Aumentar el timeout para evitar cierres prematuros
+            timeout: 30000
         });
 
-        const context = await browser.newContext({
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        console.log('Creating browser context...');
+        context = await browser.newContext({
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            // Aumentar el timeout para operaciones de navegación
+            navigationTimeout: 60000,
+            // Añadir un timeout general para todas las operaciones
+            timeout: 60000
         });
-        const page = await context.newPage();
 
-        // Navigate to the URL
-        await page.goto(url, { waitUntil: 'networkidle' });
+        console.log('Creating new page...');
+        page = await context.newPage();
 
-        // Search for the target list item
+        console.log(`Navigating to ${url}...`);
+        // Modificar la navegación para ser más robusta
+        await page.goto(url, {
+            waitUntil: 'domcontentloaded', // Usar una opción menos estricta que 'networkidle'
+            timeout: 60000 // Aumentar el timeout para la navegación
+        });
+
+        console.log('Navigation complete, searching for target...');
         const result = await searchForTarget(page, searchWord);
-
-        // Send notifications and return response based on search results
         return handleSearchResults(result, searchWord, url);
     } catch (error) {
         console.error('Error during website check:', error);
-
         try {
             await bot.sendMessage(chatId, `Error checking for tickets: ${error.message}`);
         } catch (telegramError) {
             console.error('Error sending Telegram message:', telegramError);
         }
-
         return {
             statusCode: 500,
             body: JSON.stringify('An error occurred while processing the request: ' + error.message)
         };
     } finally {
-        // Close the browser
+        // Cerrar los recursos en orden inverso y con comprobaciones
+        console.log('Cleaning up resources...');
+        if (page && !page.isClosed()) {
+            await page.close().catch(e => console.error('Error closing page:', e));
+        }
+        if (context) {
+            await context.close().catch(e => console.error('Error closing context:', e));
+        }
         if (browser) {
-            await browser.close();
+            await browser.close().catch(e => console.error('Error closing browser:', e));
         }
     }
 };
