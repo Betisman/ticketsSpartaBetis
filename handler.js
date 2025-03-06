@@ -41,15 +41,26 @@ module.exports.check = async (event) => {
             headless: true,
             // Aumentar el timeout para evitar cierres prematuros
             timeout: 30000,
+            executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
             args: [
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--no-sandbox',
+                '--disable-gpu',                     // Critical for Lambda environment
+                '--disable-dev-shm-usage',           // Prevents crashes in containerized environments
                 '--disable-setuid-sandbox',
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--disable-extensions'
-            ]
+                '--no-sandbox',                      // Required in Lambda
+                '--no-zygote',                       // Helps with stability
+                '--single-process',                  // Simplifies the browser process model
+                '--disable-accelerated-2d-canvas',   // Disable GPU-accelerated 2D canvas
+                '--disable-accelerated-jpeg-decoding', // Disable GPU-accelerated JPEG decoding
+                '--disable-accelerated-mjpeg-decode',  // Disable GPU-accelerated MJPEG decoding
+                '--disable-accelerated-video-decode',  // Disable GPU-accelerated video decoding
+                '--disable-gl-drawing-for-tests',      // Disable GL drawing
+                '--disable-software-rasterizer',       // Disable software rasterizer
+                '--ignore-gpu-blocklist',              // Ignore GPU blocklist
+                '--in-process-gpu',                    // Use in-process GPU
+                '--disable-web-security',              // Helps with cross-origin issues
+                '--disable-features=IsolateOrigins,site-per-process'  // Fixes some resource issues
+            ],
+            chromiumSandbox: false
         });
 
         console.log('Creating browser context...');
