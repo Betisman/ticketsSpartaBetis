@@ -38,17 +38,29 @@ module.exports.check = async (event) => {
     let page = null;
 
     try {
-        console.log('Launching browser with configuration:', {
-            headless: true,
-            timeout: 30000
-        });
-        browser = await playwright.launchChromium({
-            args: chromium_aws.args,
-            executablePath: await chromium_aws.executablePath(),
-            headless: chromium_aws.headless === 'true',
-            timeout: 30000,
-            args: [...chromium_aws.args, '--no-sandbox', '--disable-setuid-sandbox'],
-        });
+        console.log('Launching browser...');
+
+        // Check if running in AWS Lambda or locally
+        const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+        if (isLambda) {
+            // AWS Lambda configuration
+            console.log('Running in AWS Lambda environment');
+            browser = await playwright.launchChromium({
+                args: [...chromium_aws.args, '--no-sandbox', '--disable-setuid-sandbox'],
+                executablePath: await chromium_aws.executablePath(),
+                headless: chromium_aws.headless === 'true',
+                timeout: 30000,
+            });
+        } else {
+            // Local configuration
+            console.log('Running in local environment');
+            browser = await chromium.launch({
+                headless: true,
+                timeout: 30000,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+        }
 
         // More detailed logging of browser status
         console.log('Browser launched successfully. Browser version:',
