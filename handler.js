@@ -1,6 +1,8 @@
 'use strict';
 const TelegramBot = require('node-telegram-bot-api');
+const { chromium } = require('playwright');
 const playwright = require('playwright-aws-lambda');
+const chromium_aws = require('@sparticuz/chromium');
 require('dotenv').config();
 
 // Environment variables and constants
@@ -36,49 +38,55 @@ module.exports.check = async (event) => {
     let page = null;
 
     try {
-        console.log('Launching browser...');
+        console.log('Launching browser with configuration:', {
+            headless: true,
+            timeout: 30000
+        });
         browser = await playwright.launchChromium({
             headless: true,
-            // Aumentar el timeout para evitar cierres prematuros
-            timeout: 30000,
-            executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
-            args: [
-                '--disable-gpu',                     // Critical for Lambda environment
-                '--disable-dev-shm-usage',           // Prevents crashes in containerized environments
-                '--disable-setuid-sandbox',
-                '--no-sandbox',                      // Required in Lambda
-                '--no-zygote',                       // Helps with stability
-                '--single-process',                  // Simplifies the browser process model
-                '--disable-accelerated-2d-canvas',   // Disable GPU-accelerated 2D canvas
-                '--disable-accelerated-jpeg-decoding', // Disable GPU-accelerated JPEG decoding
-                '--disable-accelerated-mjpeg-decode',  // Disable GPU-accelerated MJPEG decoding
-                '--disable-accelerated-video-decode',  // Disable GPU-accelerated video decoding
-                '--disable-gl-drawing-for-tests',      // Disable GL drawing
-                '--disable-software-rasterizer',       // Disable software rasterizer
-                '--ignore-gpu-blocklist',              // Ignore GPU blocklist
-                '--in-process-gpu',                    // Use in-process GPU
-                '--disable-web-security',              // Helps with cross-origin issues
-                '--disable-features=IsolateOrigins,site-per-process'  // Fixes some resource issues
-            ],
-            chromiumSandbox: false
+            timeout: 30000
         });
+
+        // More detailed logging of browser status
+        console.log('Browser launched successfully. Browser version:',
+            await browser.version());
 
         console.log('Creating browser context...');
         context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            navigationTimeout: 60000,
-            timeout: 60000,
+            viewport: { width: 1280, height: 720 },
+            javaScriptEnabled: true,
+            bypassCSP: true
         });
 
         console.log('Creating new page...');
         page = await context.newPage();
 
         console.log(`Navigating to ${url}...`);
-        // Modificar la navegación para ser más robusta
-        await page.goto(url, {
-            waitUntil: 'domcontentloaded', // Usar una opción menos estricta que 'networkidle'
-            timeout: 60000 // Aumentar el timeout para la navegación
-        });
+        const MAX_RETRIES = 3;
+        let retryCount = 0;
+        let navigationSuccessful = false;
+
+        while (!navigationSuccessful && retryCount < MAX_RETRIES) {
+            try {
+                console.log(`Navigation attempt ${retryCount + 1}/${MAX_RETRIES} to ${url}...`);
+                await page.goto(url, {
+                    waitUntil: 'domcontentloaded',
+                    timeout: 30000
+                });
+                navigationSuccessful = true;
+                console.log('Navigation successful!');
+            } catch (navigationError) {
+                retryCount++;
+                console.error(`Navigation attempt ${retryCount} failed:`, navigationError.message);
+
+                if (retryCount >= MAX_RETRIES) {
+                    throw navigationError;
+                }
+
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
 
         console.log('Navigation complete, searching for target...');
         const result = await searchForTarget(page, searchWord);
@@ -102,16 +110,20 @@ module.exports.check = async (event) => {
             body: JSON.stringify('An error occurred while processing the request: ' + error.message)
         };
     } finally {
-        // Cerrar los recursos en orden inverso y con comprobaciones
+        // More robust resource cleanup
         console.log('Cleaning up resources...');
-        if (page && !page.isClosed()) {
-            await page.close().catch(e => console.error('Error closing page:', e));
-        }
-        if (context) {
-            await context.close().catch(e => console.error('Error closing context:', e));
-        }
-        if (browser) {
-            await browser.close().catch(e => console.error('Error closing browser:', e));
+        try {
+            if (page) {
+                await page.close().catch(e => console.error('Error closing page:', e));
+            }
+            if (context) {
+                await context.close().catch(e => console.error('Error closing context:', e));
+            }
+            if (browser) {
+                await browser.close().catch(e => console.error('Error closing browser:', e));
+            }
+        } catch (cleanupError) {
+            console.error('Error during cleanup:', cleanupError);
         }
     }
 };
