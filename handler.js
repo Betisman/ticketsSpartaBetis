@@ -86,9 +86,10 @@ module.exports.check = async (event) => {
             try {
                 console.log(`Navigation attempt ${retryCount + 1}/${MAX_RETRIES} to ${url}...`);
                 await page.goto(url, {
-                    waitUntil: 'domcontentloaded',
+                    waitUntil: 'networkidle',
                     timeout: 30000
                 });
+                console.log(await page.content());
                 navigationSuccessful = true;
                 console.log('Navigation successful!');
             } catch (navigationError) {
@@ -145,9 +146,12 @@ module.exports.check = async (event) => {
 
 // Helper function to search for the target item
 async function searchForTarget(page, searchWord) {
+    console.log(await page.content());
     const lis = await page.$$('ul.events-list li.events-item');
     let targetLi = null;
 
+    console.log('Searching for target...');
+    console.log(lis.length);
     for (const li of lis) {
         const liText = await li.innerText();
         console.log(liText);
