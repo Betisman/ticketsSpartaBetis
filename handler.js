@@ -43,8 +43,11 @@ module.exports.check = async (event) => {
             timeout: 30000
         });
         browser = await playwright.launchChromium({
-            headless: true,
-            timeout: 30000
+            args: chromium_aws.args,
+            executablePath: await chromium_aws.executablePath(),
+            headless: chromium_aws.headless === 'true',
+            timeout: 30000,
+            args: [...chromium_aws.args, '--no-sandbox', '--disable-setuid-sandbox'],
         });
 
         // More detailed logging of browser status
