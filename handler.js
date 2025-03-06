@@ -40,16 +40,23 @@ module.exports.check = async (event) => {
         browser = await playwright.launchChromium({
             headless: true,
             // Aumentar el timeout para evitar cierres prematuros
-            timeout: 30000
+            timeout: 30000,
+            args: [
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-web-security',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--disable-extensions'
+            ]
         });
 
         console.log('Creating browser context...');
         context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            // Aumentar el timeout para operaciones de navegación
             navigationTimeout: 60000,
-            // Añadir un timeout general para todas las operaciones
-            timeout: 60000
+            timeout: 60000,
         });
 
         console.log('Creating new page...');
@@ -66,8 +73,15 @@ module.exports.check = async (event) => {
         const result = await searchForTarget(page, searchWord);
         return handleSearchResults(result, searchWord, url);
     } catch (error) {
-        console.error('Error during website check:', error);
         try {
+            console.error('Detailed error information:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+                browserState: browser ? 'initialized' : 'not initialized',
+                contextState: context ? 'initialized' : 'not initialized',
+                pageState: page ? 'initialized' : 'not initialized'
+            });
             await bot.sendMessage(chatId, `Error checking for tickets: ${error.message}`);
         } catch (telegramError) {
             console.error('Error sending Telegram message:', telegramError);
